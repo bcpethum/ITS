@@ -47,7 +47,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Don't redirect if we're already on auth pages
       if (!window.location.pathname.startsWith('/login') &&
-          !window.location.pathname.startsWith('/register')) {
+        !window.location.pathname.startsWith('/register')) {
         localStorage.removeItem('user');
         window.location.href = '/login';
       }
@@ -60,17 +60,28 @@ api.interceptors.response.use(
 // Auth API calls
 // ─────────────────────────────────────────────────────────────────────────────
 export const authAPI = {
-  register:    (data) => api.post('/auth/register', data),
-  login:       (data) => api.post('/auth/login', data),
-  getMe:       ()     => api.get('/auth/me'),
-  getAllUsers:  ()     => api.get('/auth/users'),
+  register: (data) => api.post('/auth/register', data),
+  login: (data) => api.post('/auth/login', data),
+  getMe: () => api.get('/auth/me'),
+  getAllUsers: () => api.get('/auth/users'),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Issues API calls (will be expanded in Phase 2)
+// Issues API calls
 // ─────────────────────────────────────────────────────────────────────────────
 export const issueAPI = {
-  // Placeholder — will be implemented in Phase 2
+  /** List issues — supports query params: status, priority, type, assignee, search, page, limit */
+  getAll:   (params)    => api.get('/issues', { params }),
+  /** Dashboard stats: total + counts by status / priority / type */
+  getStats: ()          => api.get('/issues/stats'),
+  /** Get a single issue by ID */
+  getOne:   (id)        => api.get(`/issues/${id}`),
+  /** Create a new issue */
+  create:   (data)      => api.post('/issues', data),
+  /** Update an existing issue */
+  update:   (id, data)  => api.put(`/issues/${id}`, data),
+  /** Delete an issue */
+  remove:   (id)        => api.delete(`/issues/${id}`),
 };
 
 export default api;
