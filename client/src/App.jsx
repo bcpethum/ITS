@@ -1,9 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
-import Navbar    from './components/Navbar';
-import Login     from './pages/Login';
-import Register  from './pages/Register';
+import Navbar from './components/Navbar';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import IssueList from './pages/IssueList';
 
@@ -63,7 +63,7 @@ export default function App() {
   return (
     <Routes>
       {/* ── Guest routes (no auth required, redirect if already logged in) ── */}
-      <Route path="/login"    element={<GuestRoute><Login /></GuestRoute>} />
+      <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
 
       {/* ── Protected routes (require authentication) ───────────────────── */}

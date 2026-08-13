@@ -5,7 +5,8 @@ const cors = require('cors');
 const path = require('path');
 
 const connectDB = require('./config/db');
-const authRoutes = require('./routes/authRoutes');
+const authRoutes  = require('./routes/authRoutes');
+const issueRoutes = require('./routes/issueRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -43,8 +44,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // ─────────────────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 
-// Issue routes will be added in Phase 2
-// app.use('/api/issues', issueRoutes);
+// Issue routes — Phase 2
+app.use('/api/issues', issueRoutes);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Health Check Endpoint
