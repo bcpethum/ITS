@@ -2,14 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { issueAPI, authAPI } from '../services/api';
 
 /**
- * IssueModal — Slide-in modal for creating or editing an issue.
- *
- * Props:
- *   isOpen   — whether the modal is visible
- *   onClose  — called when the modal should close
- *   onSaved  — called with the created/updated issue after successful save
- *   issue    — if provided, the modal is in "edit" mode; otherwise "create" mode
+ * IssueModal — Create / Edit modal. Tailwind v4.
  */
+const inputCls = (hasError) =>
+  `w-full rounded-lg border px-3 py-2 text-sm bg-elevated text-ink placeholder:text-ink-3 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+    hasError ? 'border-danger ring-2 ring-danger/20' : 'border-edge'
+  }`;
+
 export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
   const isEditMode = Boolean(issue);
 
@@ -22,7 +21,6 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
   const [errors,  setErrors]  = useState({});
   const [apiErr,  setApiErr]  = useState('');
 
-  // Populate form when editing an existing issue
   useEffect(() => {
     if (isOpen && issue) {
       setForm({
@@ -32,10 +30,8 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
         priority:    issue.priority     || 'medium',
         type:        issue.type         || 'task',
         assignee:    issue.assignee?._id || '',
-        dueDate:     issue.dueDate
-          ? new Date(issue.dueDate).toISOString().split('T')[0]
-          : '',
-        tags: (issue.tags || []).join(', '),
+        dueDate:     issue.dueDate ? new Date(issue.dueDate).toISOString().split('T')[0] : '',
+        tags:        (issue.tags || []).join(', '),
       });
     } else if (isOpen && !issue) {
       setForm({ title: '', description: '', status: 'open', priority: 'medium', type: 'task', assignee: '', dueDate: '', tags: '' });
@@ -44,12 +40,9 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
     setApiErr('');
   }, [isOpen, issue]);
 
-  // Fetch user list for assignee dropdown
   useEffect(() => {
     if (!isOpen) return;
-    authAPI.getAllUsers()
-      .then((r) => setUsers(r.data.data))
-      .catch(() => setUsers([]));
+    authAPI.getAllUsers().then((r) => setUsers(r.data.data)).catch(() => setUsers([]));
   }, [isOpen]);
 
   const handleChange = useCallback((e) => {
@@ -60,10 +53,10 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
 
   const validate = () => {
     const errs = {};
-    if (!form.title.trim())                              errs.title = 'Title is required';
-    else if (form.title.trim().length < 3)               errs.title = 'Title must be at least 3 characters';
-    else if (form.title.trim().length > 200)             errs.title = 'Title cannot exceed 200 characters';
-    if (form.description.length > 5000)                  errs.description = 'Description cannot exceed 5000 characters';
+    if (!form.title.trim())                      errs.title = 'Title is required';
+    else if (form.title.trim().length < 3)        errs.title = 'At least 3 characters';
+    else if (form.title.trim().length > 200)      errs.title = 'Max 200 characters';
+    if (form.description.length > 5000)           errs.description = 'Max 5000 characters';
     if (form.dueDate && isNaN(Date.parse(form.dueDate))) errs.dueDate = 'Invalid date';
     return errs;
   };
@@ -72,36 +65,25 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
-
     setLoading(true);
     setApiErr('');
-
     const payload = {
-      title:       form.title.trim(),
-      description: form.description.trim(),
-      status:      form.status,
-      priority:    form.priority,
-      type:        form.type,
-      assignee:    form.assignee || null,
-      dueDate:     form.dueDate  || null,
-      tags:        form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+      title: form.title.trim(), description: form.description.trim(),
+      status: form.status, priority: form.priority, type: form.type,
+      assignee: form.assignee || null,
+      dueDate:  form.dueDate  || null,
+      tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
     };
-
     try {
-      let res;
-      if (isEditMode) {
-        res = await issueAPI.update(issue._id, payload);
-      } else {
-        res = await issueAPI.create(payload);
-      }
+      const res = isEditMode ? await issueAPI.update(issue._id, payload) : await issueAPI.create(payload);
       onSaved(res.data.data);
       onClose();
     } catch (err) {
       const serverErr = err.response?.data;
       if (serverErr?.errors) {
-        const fieldErrors = {};
-        serverErr.errors.forEach(({ field, message }) => { fieldErrors[field] = message; });
-        setErrors(fieldErrors);
+        const fe = {};
+        serverErr.errors.forEach(({ field, message }) => { fe[field] = message; });
+        setErrors(fe);
       } else {
         setApiErr(serverErr?.message || 'Something went wrong. Please try again.');
       }
@@ -112,68 +94,74 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
 
   if (!isOpen) return null;
 
+  const selectCls = 'w-full rounded-lg border border-edge bg-elevated px-3 py-2 text-sm text-ink outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer';
+
   return (
     <div
-      className="modal-overlay animate-fadeIn"
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 animate-fadeIn"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="issue-modal-title"
+      role="dialog" aria-modal="true" aria-labelledby="issue-modal-title"
     >
-      <div className="modal animate-slideUp">
+      <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl border border-edge bg-surface shadow-2xl shadow-black/60 animate-slideUp">
+
         {/* ── Header ── */}
-        <div className="modal-header">
-          <h2 id="issue-modal-title" className="modal-title">
+        <div className="flex items-center justify-between border-b border-edge px-6 py-4">
+          <h2 id="issue-modal-title" className="text-base font-bold text-ink">
             {isEditMode ? '✏️ Edit Issue' : '➕ Create Issue'}
           </h2>
-          <button className="modal-close" onClick={onClose} aria-label="Close modal" type="button">✕</button>
+          <button
+            type="button" onClick={onClose} aria-label="Close"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-2 transition-all hover:bg-subtle hover:text-ink cursor-pointer"
+          >
+            ✕
+          </button>
         </div>
 
-        {/* ── Body (form) ── */}
-        <form className="modal-body" onSubmit={handleSubmit} noValidate>
-          {apiErr && <div className="alert alert-error" role="alert">{apiErr}</div>}
+        {/* ── Form ── */}
+        <form className="flex flex-col gap-4 p-6" onSubmit={handleSubmit} noValidate>
+          {apiErr && (
+            <div className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+              {apiErr}
+            </div>
+          )}
 
           {/* Title */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="issue-title">
-              Title <span className="required">*</span>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="issue-title" className="text-sm font-medium text-ink-2">
+              Title <span className="text-danger">*</span>
             </label>
-            <input
-              id="issue-title" name="title" type="text"
-              className={`form-input ${errors.title ? 'input-error' : ''}`}
-              placeholder="Brief, descriptive title…"
-              value={form.title} onChange={handleChange} maxLength={200} autoFocus
-            />
-            {errors.title && <p className="form-error">{errors.title}</p>}
+            <input id="issue-title" name="title" type="text" autoFocus
+              placeholder="Brief, descriptive title…" maxLength={200}
+              value={form.title} onChange={handleChange}
+              className={inputCls(errors.title)} />
+            {errors.title && <p className="text-xs text-danger">{errors.title}</p>}
           </div>
 
           {/* Description */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="issue-description">Description</label>
-            <textarea
-              id="issue-description" name="description"
-              className={`form-input form-textarea ${errors.description ? 'input-error' : ''}`}
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="issue-description" className="text-sm font-medium text-ink-2">Description</label>
+            <textarea id="issue-description" name="description" rows={3} maxLength={5000}
               placeholder="Steps to reproduce, acceptance criteria…"
-              value={form.description} onChange={handleChange} rows={4} maxLength={5000}
-            />
-            <p className="form-hint">{form.description.length} / 5000</p>
-            {errors.description && <p className="form-error">{errors.description}</p>}
+              value={form.description} onChange={handleChange}
+              className={`${inputCls(errors.description)} resize-none`} />
+            <p className="text-xs text-ink-3">{form.description.length} / 5000</p>
+            {errors.description && <p className="text-xs text-danger">{errors.description}</p>}
           </div>
 
           {/* Status + Priority */}
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label" htmlFor="issue-status">Status</label>
-              <select id="issue-status" name="status" className="form-select" value={form.status} onChange={handleChange}>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="issue-status" className="text-sm font-medium text-ink-2">Status</label>
+              <select id="issue-status" name="status" value={form.status} onChange={handleChange} className={selectCls}>
                 <option value="open">🔵 Open</option>
                 <option value="in-progress">🟡 In Progress</option>
                 <option value="resolved">🟢 Resolved</option>
                 <option value="closed">⚫ Closed</option>
               </select>
             </div>
-            <div className="form-group">
-              <label className="form-label" htmlFor="issue-priority">Priority</label>
-              <select id="issue-priority" name="priority" className="form-select" value={form.priority} onChange={handleChange}>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="issue-priority" className="text-sm font-medium text-ink-2">Priority</label>
+              <select id="issue-priority" name="priority" value={form.priority} onChange={handleChange} className={selectCls}>
                 <option value="low">↓ Low</option>
                 <option value="medium">→ Medium</option>
                 <option value="high">↑ High</option>
@@ -183,55 +171,54 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
           </div>
 
           {/* Type + Assignee */}
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label" htmlFor="issue-type">Type</label>
-              <select id="issue-type" name="type" className="form-select" value={form.type} onChange={handleChange}>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="issue-type" className="text-sm font-medium text-ink-2">Type</label>
+              <select id="issue-type" name="type" value={form.type} onChange={handleChange} className={selectCls}>
                 <option value="bug">🐛 Bug</option>
                 <option value="feature">✨ Feature</option>
                 <option value="task">✅ Task</option>
                 <option value="improvement">⚡ Improvement</option>
               </select>
             </div>
-            <div className="form-group">
-              <label className="form-label" htmlFor="issue-assignee">Assignee</label>
-              <select id="issue-assignee" name="assignee" className="form-select" value={form.assignee} onChange={handleChange}>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="issue-assignee" className="text-sm font-medium text-ink-2">Assignee</label>
+              <select id="issue-assignee" name="assignee" value={form.assignee} onChange={handleChange} className={selectCls}>
                 <option value="">— Unassigned —</option>
-                {users.map((u) => (
-                  <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
-                ))}
+                {users.map((u) => <option key={u._id} value={u._id}>{u.name} ({u.role})</option>)}
               </select>
             </div>
           </div>
 
           {/* Due Date + Tags */}
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label" htmlFor="issue-dueDate">Due Date</label>
-              <input
-                id="issue-dueDate" name="dueDate" type="date"
-                className={`form-input ${errors.dueDate ? 'input-error' : ''}`}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="issue-dueDate" className="text-sm font-medium text-ink-2">Due Date</label>
+              <input id="issue-dueDate" name="dueDate" type="date"
                 value={form.dueDate} onChange={handleChange}
-              />
-              {errors.dueDate && <p className="form-error">{errors.dueDate}</p>}
+                className={inputCls(errors.dueDate)} />
+              {errors.dueDate && <p className="text-xs text-danger">{errors.dueDate}</p>}
             </div>
-            <div className="form-group">
-              <label className="form-label" htmlFor="issue-tags">Tags</label>
-              <input
-                id="issue-tags" name="tags" type="text" className="form-input"
-                placeholder="ui, backend, auth (comma-separated)"
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="issue-tags" className="text-sm font-medium text-ink-2">Tags</label>
+              <input id="issue-tags" name="tags" type="text"
+                placeholder="ui, backend, auth"
                 value={form.tags} onChange={handleChange}
-              />
-              <p className="form-hint">Separate with commas</p>
+                className={inputCls(false)} />
+              <p className="text-xs text-ink-3">Comma-separated</p>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="modal-footer">
-            <button type="button" className="btn btn-ghost" onClick={onClose} disabled={loading}>Cancel</button>
-            <button type="submit" className="btn btn-primary" id="issue-modal-submit" disabled={loading}>
+          <div className="flex justify-end gap-2 pt-2 border-t border-edge mt-1">
+            <button type="button" onClick={onClose} disabled={loading}
+              className="rounded-lg border border-edge px-4 py-2 text-sm font-medium text-ink-2 transition-all hover:bg-subtle hover:text-ink cursor-pointer">
+              Cancel
+            </button>
+            <button type="submit" id="issue-modal-submit" disabled={loading}
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-dark disabled:opacity-60 cursor-pointer">
               {loading
-                ? <><span className="spinner spinner-sm" style={{ borderTopColor: '#fff' }} /> Saving…</>
+                ? <><span className="spinner" style={{ borderTopColor: '#fff' }} />Saving…</>
                 : isEditMode ? 'Save Changes' : 'Create Issue'
               }
             </button>

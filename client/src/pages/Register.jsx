@@ -3,16 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 /**
- * Register Page
- *
- * New user registration form with:
- * - Name, email, password, confirm password, role fields
- * - Client-side validation for all fields
- * - Password strength indicator
- * - Server validation error display
- * - Auto-login after successful registration
+ * Register Page — Tailwind v4
  */
-
 const ROLES = [
   { value: 'developer', label: '💻 Developer' },
   { value: 'tester',    label: '🧪 Tester'    },
@@ -23,10 +15,10 @@ export default function Register() {
   const [formData, setFormData] = useState({
     name: '', email: '', password: '', confirmPassword: '', role: 'developer',
   });
-  const [fieldErrors, setFieldErrors]   = useState({});
-  const [serverError, setServerError]   = useState('');
-  const [serverErrors, setServerErrors] = useState([]); // field-level from server
-  const [loading, setLoading]           = useState(false);
+  const [fieldErrors,  setFieldErrors]  = useState({});
+  const [serverError,  setServerError]  = useState('');
+  const [serverErrors, setServerErrors] = useState([]);
+  const [loading,      setLoading]      = useState(false);
 
   const { register } = useAuth();
   const navigate     = useNavigate();
@@ -41,204 +33,170 @@ export default function Register() {
 
   const validate = () => {
     const errors = {};
-    if (!formData.name.trim())          errors.name = 'Name is required';
+    if (!formData.name.trim())      errors.name = 'Name is required';
     else if (formData.name.trim().length < 2) errors.name = 'Name must be at least 2 characters';
-
-    if (!formData.email.trim())         errors.email = 'Email is required';
+    if (!formData.email.trim())     errors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) errors.email = 'Enter a valid email address';
-
-    if (!formData.password)             errors.password = 'Password is required';
-    else if (formData.password.length < 6) errors.password = 'Password must be at least 6 characters';
-
-    if (!formData.confirmPassword)      errors.confirmPassword = 'Please confirm your password';
+    if (!formData.password)         errors.password = 'Password is required';
+    else if (formData.password.length < 6) errors.password = 'At least 6 characters';
+    if (!formData.confirmPassword)  errors.confirmPassword = 'Please confirm your password';
     else if (formData.password !== formData.confirmPassword) errors.confirmPassword = 'Passwords do not match';
-
     return errors;
   };
 
-  // Password strength: 0–4
-  const getPasswordStrength = (password) => {
-    let score = 0;
-    if (password.length >= 6)  score++;
-    if (password.length >= 10) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[0-9!@#$%^&*]/.test(password)) score++;
-    return score;
+  // Password strength 0-4
+  const getStrength = (pw) => {
+    let s = 0;
+    if (pw.length >= 6)  s++;
+    if (pw.length >= 10) s++;
+    if (/[A-Z]/.test(pw)) s++;
+    if (/[0-9!@#$%^&*]/.test(pw)) s++;
+    return s;
   };
-
-  const passwordStrength = getPasswordStrength(formData.password);
-  const strengthLabels   = ['', 'Weak', 'Fair', 'Good', 'Strong'];
-  const strengthColors   = ['', '#FF4757', '#F7B731', '#00D9C0', '#26de81'];
+  const strength       = getStrength(formData.password);
+  const strengthLabel  = ['', 'Weak', 'Fair', 'Good', 'Strong'][strength];
+  const strengthColor  = ['', '#FF4757', '#F7B731', '#00D9C0', '#26de81'][strength];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = validate();
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
-
+    if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
     setLoading(true);
     setServerError('');
-
     try {
-      await register({
-        name:     formData.name.trim(),
-        email:    formData.email.trim(),
-        password: formData.password,
-        role:     formData.role,
-      });
+      await register({ name: formData.name.trim(), email: formData.email.trim(), password: formData.password, role: formData.role });
       navigate('/dashboard');
     } catch (err) {
       const data = err.response?.data;
-      if (data?.errors?.length > 0) {
-        setServerErrors(data.errors);
-      } else {
-        setServerError(data?.message || 'Registration failed. Please try again.');
-      }
+      if (data?.errors?.length > 0) setServerErrors(data.errors);
+      else setServerError(data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const inputCls = (field) =>
+    `w-full rounded-lg border px-3 py-2.5 text-sm bg-elevated text-ink placeholder:text-ink-3 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+      fieldErrors[field] ? 'border-danger ring-2 ring-danger/20' : 'border-edge'
+    }`;
+
   return (
-    <div className="auth-page">
-      <div className="auth-card animate-slideUp" style={{ maxWidth: '500px' }}>
+    <div className="flex min-h-screen items-center justify-center bg-bg px-4 py-12">
+      <div className="w-full max-w-lg animate-slideUp">
+        <div className="rounded-2xl border border-edge bg-surface p-8 shadow-2xl shadow-black/40">
 
-        {/* Logo */}
-        <div className="auth-logo">
-          <div className="auth-logo-icon">🔍</div>
-          <span className="auth-logo-text">IssueTrack</span>
-        </div>
-
-        <h1 className="auth-title">Create an account</h1>
-        <p className="auth-subtitle">Join your team and start tracking issues</p>
-
-        {/* Server error */}
-        {serverError && (
-          <div className="alert alert-error" style={{ marginBottom: '20px' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            {serverError}
-          </div>
-        )}
-        {serverErrors.length > 0 && (
-          <div className="alert alert-error" style={{ marginBottom: '20px', flexDirection: 'column', alignItems: 'flex-start' }}>
-            {serverErrors.map((e, i) => <span key={i}>• {e.message}</span>)}
-          </div>
-        )}
-
-        <form className="auth-form" onSubmit={handleSubmit} noValidate>
-
-          {/* Name */}
-          <div className="form-group">
-            <label className="form-label required" htmlFor="reg-name">Full name</label>
-            <input
-              id="reg-name" name="name" type="text" autoComplete="name"
-              className={`form-input ${fieldErrors.name ? 'error' : ''}`}
-              placeholder="Jane Smith"
-              value={formData.name} onChange={handleChange}
-            />
-            {fieldErrors.name && <span className="form-error">{fieldErrors.name}</span>}
+          {/* Logo */}
+          <div className="mb-6 flex flex-col items-center gap-2">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-2xl shadow-lg shadow-primary/30">
+              🔍
+            </div>
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent text-xl font-bold tracking-tight">
+              IssueTrack
+            </span>
           </div>
 
-          {/* Email */}
-          <div className="form-group">
-            <label className="form-label required" htmlFor="reg-email">Email address</label>
-            <input
-              id="reg-email" name="email" type="email" autoComplete="email"
-              className={`form-input ${fieldErrors.email ? 'error' : ''}`}
-              placeholder="you@company.com"
-              value={formData.email} onChange={handleChange}
-            />
-            {fieldErrors.email && <span className="form-error">{fieldErrors.email}</span>}
-          </div>
+          <h1 className="mb-1 text-center text-2xl font-extrabold text-ink tracking-tight">Create an account</h1>
+          <p className="mb-7 text-center text-sm text-ink-2">Join your team and start tracking issues</p>
 
-          {/* Role */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="reg-role">Role</label>
-            <select
-              id="reg-role" name="role"
-              className="form-select"
-              value={formData.role} onChange={handleChange}
-            >
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
+          {/* Server errors */}
+          {serverError && (
+            <div className="mb-5 flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              {serverError}
+            </div>
+          )}
+          {serverErrors.length > 0 && (
+            <div className="mb-5 flex flex-col gap-1 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+              {serverErrors.map((e, i) => <span key={i}>• {e.message}</span>)}
+            </div>
+          )}
 
-          {/* Password */}
-          <div className="form-group">
-            <label className="form-label required" htmlFor="reg-password">Password</label>
-            <input
-              id="reg-password" name="password" type="password" autoComplete="new-password"
-              className={`form-input ${fieldErrors.password ? 'error' : ''}`}
-              placeholder="At least 6 characters"
-              value={formData.password} onChange={handleChange}
-            />
-            {/* Strength bar */}
-            {formData.password && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                <div style={{ display: 'flex', gap: '4px', flex: 1 }}>
-                  {[1, 2, 3, 4].map((level) => (
-                    <div key={level} style={{
-                      flex: 1, height: '4px', borderRadius: '2px',
-                      background: passwordStrength >= level ? strengthColors[passwordStrength] : 'var(--color-border)',
-                      transition: 'background 0.3s ease',
-                    }} />
-                  ))}
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+
+            {/* Name */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="reg-name" className="text-sm font-medium text-ink-2">Full name <span className="text-danger">*</span></label>
+              <input id="reg-name" name="name" type="text" autoComplete="name" placeholder="Jane Smith"
+                value={formData.name} onChange={handleChange} className={inputCls('name')} />
+              {fieldErrors.name && <p className="text-xs text-danger">{fieldErrors.name}</p>}
+            </div>
+
+            {/* Email */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="reg-email" className="text-sm font-medium text-ink-2">Email address <span className="text-danger">*</span></label>
+              <input id="reg-email" name="email" type="email" autoComplete="email" placeholder="you@company.com"
+                value={formData.email} onChange={handleChange} className={inputCls('email')} />
+              {fieldErrors.email && <p className="text-xs text-danger">{fieldErrors.email}</p>}
+            </div>
+
+            {/* Role */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="reg-role" className="text-sm font-medium text-ink-2">Role</label>
+              <select id="reg-role" name="role" value={formData.role} onChange={handleChange}
+                className="w-full rounded-lg border border-edge bg-elevated px-3 py-2.5 text-sm text-ink outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer">
+                {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </div>
+
+            {/* Password */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="reg-password" className="text-sm font-medium text-ink-2">Password <span className="text-danger">*</span></label>
+              <input id="reg-password" name="password" type="password" autoComplete="new-password" placeholder="At least 6 characters"
+                value={formData.password} onChange={handleChange} className={inputCls('password')} />
+              {/* Strength bar */}
+              {formData.password && (
+                <div className="flex items-center gap-2 mt-0.5">
+                  <div className="flex flex-1 gap-1">
+                    {[1, 2, 3, 4].map((level) => (
+                      <div key={level} className="flex-1 h-1 rounded-full transition-all duration-300"
+                        style={{ background: strength >= level ? strengthColor : 'var(--color-edge)' }} />
+                    ))}
+                  </div>
+                  <span className="text-[11px] font-semibold min-w-[38px]" style={{ color: strengthColor }}>
+                    {strengthLabel}
+                  </span>
                 </div>
-                <span style={{ fontSize: '11px', color: strengthColors[passwordStrength], fontWeight: 600, minWidth: '40px' }}>
-                  {strengthLabels[passwordStrength]}
-                </span>
-              </div>
-            )}
-            {fieldErrors.password && <span className="form-error">{fieldErrors.password}</span>}
-          </div>
+              )}
+              {fieldErrors.password && <p className="text-xs text-danger">{fieldErrors.password}</p>}
+            </div>
 
-          {/* Confirm password */}
-          <div className="form-group">
-            <label className="form-label required" htmlFor="reg-confirm">Confirm password</label>
-            <input
-              id="reg-confirm" name="confirmPassword" type="password" autoComplete="new-password"
-              className={`form-input ${fieldErrors.confirmPassword ? 'error' : ''}`}
-              placeholder="Repeat your password"
-              value={formData.confirmPassword} onChange={handleChange}
-            />
-            {fieldErrors.confirmPassword && <span className="form-error">{fieldErrors.confirmPassword}</span>}
-          </div>
+            {/* Confirm password */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="reg-confirm" className="text-sm font-medium text-ink-2">Confirm password <span className="text-danger">*</span></label>
+              <input id="reg-confirm" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Repeat your password"
+                value={formData.confirmPassword} onChange={handleChange} className={inputCls('confirmPassword')} />
+              {fieldErrors.confirmPassword && <p className="text-xs text-danger">{fieldErrors.confirmPassword}</p>}
+            </div>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            id="register-submit"
-            className={`btn btn-primary btn-lg btn-full ${loading ? 'btn-loading' : ''}`}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="spinner" style={{ borderTopColor: '#fff' }} />
-                Creating account...
-              </>
-            ) : (
-              <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
-                </svg>
-                Create Account
-              </>
-            )}
-          </button>
-        </form>
+            {/* Submit */}
+            <button
+              type="submit" id="register-submit" disabled={loading}
+              className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition-all duration-200 hover:bg-primary-dark disabled:opacity-60 cursor-pointer"
+            >
+              {loading ? (
+                <><span className="spinner" style={{ borderTopColor: '#fff' }} />Creating account…</>
+              ) : (
+                <>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+                  </svg>
+                  Create Account
+                </>
+              )}
+            </button>
+          </form>
 
-        <p className="auth-footer">
-          Already have an account?{' '}
-          <Link to="/login" style={{ fontWeight: 600 }}>Sign in</Link>
-        </p>
+          <p className="mt-6 text-center text-sm text-ink-2">
+            Already have an account?{' '}
+            <Link to="/login" className="font-semibold text-primary hover:text-primary-dark transition-colors">
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
