@@ -1,12 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { issueAPI, authAPI } from '../services/api';
+import { X, Plus, Pencil } from 'lucide-react';
 
-/**
- * IssueModal — Create / Edit modal. Tailwind v4.
- */
 const inputCls = (hasError) =>
-  `w-full rounded-lg border px-3 py-2 text-sm bg-elevated text-ink placeholder:text-ink-3 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 ${
-    hasError ? 'border-danger ring-2 ring-danger/20' : 'border-edge'
+  `w-full rounded-lg border px-3 py-2 text-sm bg-elevated text-ink placeholder:text-ink-3 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 ${hasError ? 'border-danger ring-2 ring-danger/20' : 'border-edge'
   }`;
 
 export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
@@ -16,28 +13,27 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
     title: '', description: '', status: 'open', priority: 'medium',
     type: 'task', assignee: '', dueDate: '', tags: '',
   });
-  const [users,   setUsers]   = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [errors,  setErrors]  = useState({});
-  const [apiErr,  setApiErr]  = useState('');
+  const [errors, setErrors] = useState({});
+  const [apiErr, setApiErr] = useState('');
 
   useEffect(() => {
     if (isOpen && issue) {
       setForm({
-        title:       issue.title        || '',
-        description: issue.description  || '',
-        status:      issue.status       || 'open',
-        priority:    issue.priority     || 'medium',
-        type:        issue.type         || 'task',
-        assignee:    issue.assignee?._id || '',
-        dueDate:     issue.dueDate ? new Date(issue.dueDate).toISOString().split('T')[0] : '',
-        tags:        (issue.tags || []).join(', '),
+        title: issue.title || '',
+        description: issue.description || '',
+        status: issue.status || 'open',
+        priority: issue.priority || 'medium',
+        type: issue.type || 'task',
+        assignee: issue.assignee?._id || '',
+        dueDate: issue.dueDate ? new Date(issue.dueDate).toISOString().split('T')[0] : '',
+        tags: (issue.tags || []).join(', '),
       });
     } else if (isOpen && !issue) {
       setForm({ title: '', description: '', status: 'open', priority: 'medium', type: 'task', assignee: '', dueDate: '', tags: '' });
     }
-    setErrors({});
-    setApiErr('');
+    setErrors({}); setApiErr('');
   }, [isOpen, issue]);
 
   useEffect(() => {
@@ -53,10 +49,10 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
 
   const validate = () => {
     const errs = {};
-    if (!form.title.trim())                      errs.title = 'Title is required';
-    else if (form.title.trim().length < 3)        errs.title = 'At least 3 characters';
-    else if (form.title.trim().length > 200)      errs.title = 'Max 200 characters';
-    if (form.description.length > 5000)           errs.description = 'Max 5000 characters';
+    if (!form.title.trim()) errs.title = 'Title is required';
+    else if (form.title.trim().length < 3) errs.title = 'At least 3 characters';
+    else if (form.title.trim().length > 200) errs.title = 'Max 200 characters';
+    if (form.description.length > 5000) errs.description = 'Max 5000 characters';
     if (form.dueDate && isNaN(Date.parse(form.dueDate))) errs.dueDate = 'Invalid date';
     return errs;
   };
@@ -65,13 +61,11 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
-    setLoading(true);
-    setApiErr('');
+    setLoading(true); setApiErr('');
     const payload = {
       title: form.title.trim(), description: form.description.trim(),
       status: form.status, priority: form.priority, type: form.type,
-      assignee: form.assignee || null,
-      dueDate:  form.dueDate  || null,
+      assignee: form.assignee || null, dueDate: form.dueDate || null,
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
     };
     try {
@@ -87,9 +81,7 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
       } else {
         setApiErr(serverErr?.message || 'Something went wrong. Please try again.');
       }
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   if (!isOpen) return null;
@@ -104,36 +96,32 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
     >
       <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl border border-edge bg-surface shadow-2xl shadow-black/60 animate-slideUp">
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="flex items-center justify-between border-b border-edge px-6 py-4">
-          <h2 id="issue-modal-title" className="text-base font-bold text-ink">
-            {isEditMode ? '✏️ Edit Issue' : '➕ Create Issue'}
+          <h2 id="issue-modal-title" className="flex items-center gap-2 text-base font-bold text-ink">
+            {isEditMode
+              ? <><Pencil size={15} strokeWidth={2} className="text-ink-3" /> Edit Issue</>
+              : <><Plus size={15} strokeWidth={2.5} className="text-ink-3" /> Create Issue</>
+            }
           </h2>
-          <button
-            type="button" onClick={onClose} aria-label="Close"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-2 transition-all hover:bg-subtle hover:text-ink cursor-pointer"
-          >
-            ✕
+          <button type="button" onClick={onClose} aria-label="Close"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-2 transition-all hover:bg-subtle hover:text-ink cursor-pointer">
+            <X size={16} strokeWidth={2} />
           </button>
         </div>
 
-        {/* ── Form ── */}
+        {/* Form */}
         <form className="flex flex-col gap-4 p-6" onSubmit={handleSubmit} noValidate>
           {apiErr && (
-            <div className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
-              {apiErr}
-            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{apiErr}</div>
           )}
 
           {/* Title */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="issue-title" className="text-sm font-medium text-ink-2">
-              Title <span className="text-danger">*</span>
-            </label>
+            <label htmlFor="issue-title" className="text-sm font-medium text-ink-2">Title <span className="text-danger">*</span></label>
             <input id="issue-title" name="title" type="text" autoFocus
               placeholder="Brief, descriptive title…" maxLength={200}
-              value={form.title} onChange={handleChange}
-              className={inputCls(errors.title)} />
+              value={form.title} onChange={handleChange} className={inputCls(errors.title)} />
             {errors.title && <p className="text-xs text-danger">{errors.title}</p>}
           </div>
 
@@ -153,19 +141,19 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
             <div className="flex flex-col gap-1.5">
               <label htmlFor="issue-status" className="text-sm font-medium text-ink-2">Status</label>
               <select id="issue-status" name="status" value={form.status} onChange={handleChange} className={selectCls}>
-                <option value="open">🔵 Open</option>
-                <option value="in-progress">🟡 In Progress</option>
-                <option value="resolved">🟢 Resolved</option>
-                <option value="closed">⚫ Closed</option>
+                <option value="open">Open</option>
+                <option value="in-progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="issue-priority" className="text-sm font-medium text-ink-2">Priority</label>
               <select id="issue-priority" name="priority" value={form.priority} onChange={handleChange} className={selectCls}>
-                <option value="low">↓ Low</option>
-                <option value="medium">→ Medium</option>
-                <option value="high">↑ High</option>
-                <option value="critical">🔥 Critical</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
               </select>
             </div>
           </div>
@@ -175,10 +163,10 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
             <div className="flex flex-col gap-1.5">
               <label htmlFor="issue-type" className="text-sm font-medium text-ink-2">Type</label>
               <select id="issue-type" name="type" value={form.type} onChange={handleChange} className={selectCls}>
-                <option value="bug">🐛 Bug</option>
-                <option value="feature">✨ Feature</option>
-                <option value="task">✅ Task</option>
-                <option value="improvement">⚡ Improvement</option>
+                <option value="bug">Bug</option>
+                <option value="feature">Feature</option>
+                <option value="task">Task</option>
+                <option value="improvement">Improvement</option>
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
@@ -194,17 +182,12 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="issue-dueDate" className="text-sm font-medium text-ink-2">Due Date</label>
-              <input id="issue-dueDate" name="dueDate" type="date"
-                value={form.dueDate} onChange={handleChange}
-                className={inputCls(errors.dueDate)} />
+              <input id="issue-dueDate" name="dueDate" type="date" value={form.dueDate} onChange={handleChange} className={inputCls(errors.dueDate)} />
               {errors.dueDate && <p className="text-xs text-danger">{errors.dueDate}</p>}
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="issue-tags" className="text-sm font-medium text-ink-2">Tags</label>
-              <input id="issue-tags" name="tags" type="text"
-                placeholder="ui, backend, auth"
-                value={form.tags} onChange={handleChange}
-                className={inputCls(false)} />
+              <input id="issue-tags" name="tags" type="text" placeholder="ui, backend, auth" value={form.tags} onChange={handleChange} className={inputCls(false)} />
               <p className="text-xs text-ink-3">Comma-separated</p>
             </div>
           </div>
@@ -219,7 +202,7 @@ export default function IssueModal({ isOpen, onClose, onSaved, issue = null }) {
               className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-dark disabled:opacity-60 cursor-pointer">
               {loading
                 ? <><span className="spinner" style={{ borderTopColor: '#fff' }} />Saving…</>
-                : isEditMode ? 'Save Changes' : 'Create Issue'
+                : isEditMode ? <><Pencil size={13} strokeWidth={2} />Save Changes</> : <><Plus size={13} strokeWidth={2.5} />Create Issue</>
               }
             </button>
           </div>
