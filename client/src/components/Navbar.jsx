@@ -1,5 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { Target, LayoutDashboard, ListChecks, LogOut, Sun, Moon } from 'lucide-react';
 
 const getInitials = (name) => {
   if (!name) return '?';
@@ -8,7 +10,6 @@ const getInitials = (name) => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
-// Active / inactive NavLink class helper
 const navLinkCls = ({ isActive }) =>
   `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
     isActive
@@ -18,6 +19,7 @@ const navLinkCls = ({ isActive }) =>
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = () => { logout(); navigate('/login'); };
@@ -28,8 +30,8 @@ export default function Navbar() {
 
         {/* ── Brand ── */}
         <NavLink to="/dashboard" className="flex items-center gap-2 no-underline">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-base shadow-lg shadow-primary/30">
-            🔍
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/30 text-white">
+            <Target size={16} strokeWidth={2.5} />
           </div>
           <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-bold text-base tracking-tight select-none">
             IssueTrack
@@ -39,25 +41,33 @@ export default function Navbar() {
         {/* ── Nav links ── */}
         <div className="flex items-center gap-1">
           <NavLink to="/dashboard" className={navLinkCls}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-              <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-            </svg>
+            <LayoutDashboard size={14} strokeWidth={2} />
             Dashboard
           </NavLink>
           <NavLink to="/issues" className={navLinkCls}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-            </svg>
+            <ListChecks size={14} strokeWidth={2} />
             Issues
           </NavLink>
         </div>
 
-        {/* ── User area ── */}
+        {/* ── User & Theme area ── */}
         <div className="flex items-center gap-3">
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            aria-label={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
+            title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-edge bg-surface text-ink-2 transition-all duration-200 hover:border-edge-hover hover:bg-subtle hover:text-ink cursor-pointer"
+          >
+            {isDark ? (
+              <Sun size={15} strokeWidth={2} className="text-warning transition-transform duration-200 hover:rotate-45" />
+            ) : (
+              <Moon size={15} strokeWidth={2} className="text-primary transition-transform duration-200 hover:-rotate-12" />
+            )}
+          </button>
+
           {user && (
             <>
-              {/* Avatar + name */}
               <div className="flex items-center gap-2">
                 <div
                   className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white ring-2 ring-edge select-none"
@@ -71,17 +81,12 @@ export default function Navbar() {
                 </div>
               </div>
 
-              {/* Logout */}
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-1.5 rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-ink-2 transition-all duration-200 hover:border-edge-hover hover:bg-subtle hover:text-ink cursor-pointer"
                 title="Logout"
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-                  <polyline points="16 17 21 12 16 7"/>
-                  <line x1="21" y1="12" x2="9" y2="12"/>
-                </svg>
+                <LogOut size={13} strokeWidth={2} />
                 Logout
               </button>
             </>

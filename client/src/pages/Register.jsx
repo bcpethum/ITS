@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { Target, UserPlus, AlertCircle, Sun, Moon } from 'lucide-react';
 
-/**
- * Register Page — Tailwind v4
- */
 const ROLES = [
   { value: 'developer', label: '💻 Developer' },
   { value: 'tester',    label: '🧪 Tester'    },
@@ -21,30 +20,29 @@ export default function Register() {
   const [loading,      setLoading]      = useState(false);
 
   const { register } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate     = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: '' }));
-    setServerError('');
-    setServerErrors([]);
+    setServerError(''); setServerErrors([]);
   };
 
   const validate = () => {
     const errors = {};
-    if (!formData.name.trim())      errors.name = 'Name is required';
-    else if (formData.name.trim().length < 2) errors.name = 'Name must be at least 2 characters';
-    if (!formData.email.trim())     errors.email = 'Email is required';
+    if (!formData.name.trim())     errors.name = 'Name is required';
+    else if (formData.name.trim().length < 2) errors.name = 'At least 2 characters';
+    if (!formData.email.trim())    errors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) errors.email = 'Enter a valid email address';
-    if (!formData.password)         errors.password = 'Password is required';
+    if (!formData.password)        errors.password = 'Password is required';
     else if (formData.password.length < 6) errors.password = 'At least 6 characters';
-    if (!formData.confirmPassword)  errors.confirmPassword = 'Please confirm your password';
+    if (!formData.confirmPassword) errors.confirmPassword = 'Please confirm your password';
     else if (formData.password !== formData.confirmPassword) errors.confirmPassword = 'Passwords do not match';
     return errors;
   };
 
-  // Password strength 0-4
   const getStrength = (pw) => {
     let s = 0;
     if (pw.length >= 6)  s++;
@@ -53,16 +51,15 @@ export default function Register() {
     if (/[0-9!@#$%^&*]/.test(pw)) s++;
     return s;
   };
-  const strength       = getStrength(formData.password);
-  const strengthLabel  = ['', 'Weak', 'Fair', 'Good', 'Strong'][strength];
-  const strengthColor  = ['', '#FF4757', '#F7B731', '#00D9C0', '#26de81'][strength];
+  const strength      = getStrength(formData.password);
+  const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'][strength];
+  const strengthColor = ['', '#FF4757', '#F7B731', '#00D9C0', '#26de81'][strength];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = validate();
     if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
-    setLoading(true);
-    setServerError('');
+    setLoading(true); setServerError('');
     try {
       await register({ name: formData.name.trim(), email: formData.email.trim(), password: formData.password, role: formData.role });
       navigate('/dashboard');
@@ -70,9 +67,7 @@ export default function Register() {
       const data = err.response?.data;
       if (data?.errors?.length > 0) setServerErrors(data.errors);
       else setServerError(data?.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const inputCls = (field) =>
@@ -81,14 +76,28 @@ export default function Register() {
     }`;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg px-4 py-12">
+    <div className="relative flex min-h-screen items-center justify-center bg-bg px-4 py-12">
+      {/* Theme toggle in top right */}
+      <button
+        onClick={toggleTheme}
+        aria-label={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
+        title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
+        className="absolute top-5 right-5 flex h-9 w-9 items-center justify-center rounded-xl border border-edge bg-surface text-ink-2 shadow-md transition-all duration-200 hover:border-edge-hover hover:bg-subtle hover:text-ink cursor-pointer"
+      >
+        {isDark ? (
+          <Sun size={16} strokeWidth={2} className="text-warning transition-transform duration-200 hover:rotate-45" />
+        ) : (
+          <Moon size={16} strokeWidth={2} className="text-primary transition-transform duration-200 hover:-rotate-12" />
+        )}
+      </button>
+
       <div className="w-full max-w-lg animate-slideUp">
-        <div className="rounded-2xl border border-edge bg-surface p-8 shadow-2xl shadow-black/40">
+        <div className="rounded-2xl border border-edge bg-surface p-8 shadow-2xl shadow-black/10 dark:shadow-black/40">
 
           {/* Logo */}
           <div className="mb-6 flex flex-col items-center gap-2">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-2xl shadow-lg shadow-primary/30">
-              🔍
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-white shadow-lg shadow-primary/30">
+              <Target size={24} strokeWidth={2} />
             </div>
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent text-xl font-bold tracking-tight">
               IssueTrack
@@ -98,13 +107,9 @@ export default function Register() {
           <h1 className="mb-1 text-center text-2xl font-extrabold text-ink tracking-tight">Create an account</h1>
           <p className="mb-7 text-center text-sm text-ink-2">Join your team and start tracking issues</p>
 
-          {/* Server errors */}
           {serverError && (
             <div className="mb-5 flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-              {serverError}
+              <AlertCircle size={15} strokeWidth={2} className="shrink-0" />{serverError}
             </div>
           )}
           {serverErrors.length > 0 && (
@@ -114,24 +119,18 @@ export default function Register() {
           )}
 
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-
-            {/* Name */}
             <div className="flex flex-col gap-1.5">
               <label htmlFor="reg-name" className="text-sm font-medium text-ink-2">Full name <span className="text-danger">*</span></label>
-              <input id="reg-name" name="name" type="text" autoComplete="name" placeholder="Jane Smith"
-                value={formData.name} onChange={handleChange} className={inputCls('name')} />
+              <input id="reg-name" name="name" type="text" autoComplete="name" placeholder="Jane Smith" value={formData.name} onChange={handleChange} className={inputCls('name')} />
               {fieldErrors.name && <p className="text-xs text-danger">{fieldErrors.name}</p>}
             </div>
 
-            {/* Email */}
             <div className="flex flex-col gap-1.5">
               <label htmlFor="reg-email" className="text-sm font-medium text-ink-2">Email address <span className="text-danger">*</span></label>
-              <input id="reg-email" name="email" type="email" autoComplete="email" placeholder="you@company.com"
-                value={formData.email} onChange={handleChange} className={inputCls('email')} />
+              <input id="reg-email" name="email" type="email" autoComplete="email" placeholder="you@company.com" value={formData.email} onChange={handleChange} className={inputCls('email')} />
               {fieldErrors.email && <p className="text-xs text-danger">{fieldErrors.email}</p>}
             </div>
 
-            {/* Role */}
             <div className="flex flex-col gap-1.5">
               <label htmlFor="reg-role" className="text-sm font-medium text-ink-2">Role</label>
               <select id="reg-role" name="role" value={formData.role} onChange={handleChange}
@@ -140,12 +139,9 @@ export default function Register() {
               </select>
             </div>
 
-            {/* Password */}
             <div className="flex flex-col gap-1.5">
               <label htmlFor="reg-password" className="text-sm font-medium text-ink-2">Password <span className="text-danger">*</span></label>
-              <input id="reg-password" name="password" type="password" autoComplete="new-password" placeholder="At least 6 characters"
-                value={formData.password} onChange={handleChange} className={inputCls('password')} />
-              {/* Strength bar */}
+              <input id="reg-password" name="password" type="password" autoComplete="new-password" placeholder="At least 6 characters" value={formData.password} onChange={handleChange} className={inputCls('password')} />
               {formData.password && (
                 <div className="flex items-center gap-2 mt-0.5">
                   <div className="flex flex-1 gap-1">
@@ -154,47 +150,30 @@ export default function Register() {
                         style={{ background: strength >= level ? strengthColor : 'var(--color-edge)' }} />
                     ))}
                   </div>
-                  <span className="text-[11px] font-semibold min-w-[38px]" style={{ color: strengthColor }}>
-                    {strengthLabel}
-                  </span>
+                  <span className="text-[11px] font-semibold min-w-[38px]" style={{ color: strengthColor }}>{strengthLabel}</span>
                 </div>
               )}
               {fieldErrors.password && <p className="text-xs text-danger">{fieldErrors.password}</p>}
             </div>
 
-            {/* Confirm password */}
             <div className="flex flex-col gap-1.5">
               <label htmlFor="reg-confirm" className="text-sm font-medium text-ink-2">Confirm password <span className="text-danger">*</span></label>
-              <input id="reg-confirm" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Repeat your password"
-                value={formData.confirmPassword} onChange={handleChange} className={inputCls('confirmPassword')} />
+              <input id="reg-confirm" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Repeat your password" value={formData.confirmPassword} onChange={handleChange} className={inputCls('confirmPassword')} />
               {fieldErrors.confirmPassword && <p className="text-xs text-danger">{fieldErrors.confirmPassword}</p>}
             </div>
 
-            {/* Submit */}
-            <button
-              type="submit" id="register-submit" disabled={loading}
-              className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition-all duration-200 hover:bg-primary-dark disabled:opacity-60 cursor-pointer"
-            >
-              {loading ? (
-                <><span className="spinner" style={{ borderTopColor: '#fff' }} />Creating account…</>
-              ) : (
-                <>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
-                  </svg>
-                  Create Account
-                </>
-              )}
+            <button type="submit" id="register-submit" disabled={loading}
+              className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition-all duration-200 hover:bg-primary-dark disabled:opacity-60 cursor-pointer">
+              {loading
+                ? <><span className="spinner" style={{ borderTopColor: '#fff' }} />Creating account…</>
+                : <><UserPlus size={15} strokeWidth={2} />Create Account</>
+              }
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-ink-2">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-primary hover:text-primary-dark transition-colors">
-              Sign in
-            </Link>
+            <Link to="/login" className="font-semibold text-primary hover:text-primary-dark transition-colors">Sign in</Link>
           </p>
         </div>
       </div>

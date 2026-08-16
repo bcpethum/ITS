@@ -1,14 +1,14 @@
 const express = require('express');
 const { body } = require('express-validator');
 const {
-  getIssues,
-  getIssueStats,
-  getIssue,
-  createIssue,
-  updateIssue,
-  deleteIssue,
+  getIssues, getIssueStats, getIssue,
+  createIssue, updateIssue, deleteIssue,
+  uploadAttachment, deleteAttachment,
 } = require('../controllers/issueController');
-const { protect } = require('../middleware/authMiddleware');
+const { getComments, addComment, deleteComment, commentValidation } = require('../controllers/commentController');
+const { getActivity } = require('../controllers/activityController');
+const { protect }   = require('../middleware/authMiddleware');
+const upload        = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -16,7 +16,7 @@ const router = express.Router();
 router.use(protect);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Validation
+// Issue validation rules
 // ─────────────────────────────────────────────────────────────────────────────
 const createValidation = [
   body('title').trim().notEmpty().withMessage('Title is required')
@@ -46,10 +46,10 @@ const updateValidation = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Routes
+// Core issue routes
 // ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/issues/stats — must be BEFORE /:id to avoid "stats" matching as an ID
+// Must be BEFORE /:id to avoid "stats" being treated as an ObjectId
 router.get('/stats', getIssueStats);
 
 router.route('/')
@@ -60,5 +60,25 @@ router.route('/:id')
   .get(getIssue)
   .put(updateValidation, updateIssue)
   .delete(deleteIssue);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Comments  —  /api/issues/:id/comments
+// ─────────────────────────────────────────────────────────────────────────────
+router.route('/:id/comments')
+  .get(getComments)
+  .post(commentValidation, addComment);
+
+router.delete('/:id/comments/:commentId', deleteComment);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Activity log  —  /api/issues/:id/activity
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/:id/activity', getActivity);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// File Attachments  —  /api/issues/:id/attachments
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/:id/attachments', upload.single('file'), uploadAttachment);
+router.delete('/:id/attachments/:attachmentId', deleteAttachment);
 
 module.exports = router;

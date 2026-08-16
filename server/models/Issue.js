@@ -1,9 +1,17 @@
 const mongoose = require('mongoose');
 
 /**
- * Issue Schema
- * Core data model for the Issue Tracker.
+ * Issue Schema — updated with attachments subdocument array.
  */
+const attachmentSchema = new mongoose.Schema({
+  filename:     { type: String, required: true },   // stored on disk
+  originalName: { type: String, required: true },   // original upload name
+  mimetype:     { type: String, required: true },
+  size:         { type: Number, required: true },   // bytes
+  uploadedBy:   { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  uploadedAt:   { type: Date, default: Date.now },
+}, { _id: true });
+
 const issueSchema = new mongoose.Schema(
   {
     title: {
@@ -39,7 +47,7 @@ const issueSchema = new mongoose.Schema(
       default: 'task',
     },
 
-    // The user who created the issue — auto-set in the controller
+    // User who created the issue — auto-set in controller
     reporter: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -62,16 +70,24 @@ const issueSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    // File attachments (Phase 4)
+    attachments: {
+      type: [attachmentSchema],
+      default: [],
+    },
   },
   { timestamps: true }
 );
 
-// Indexes for fast filtered queries
+// ── Indexes for fast filtered queries ──────────────────────────────────────
 issueSchema.index({ status: 1 });
 issueSchema.index({ priority: 1 });
 issueSchema.index({ type: 1 });
 issueSchema.index({ reporter: 1 });
 issueSchema.index({ assignee: 1 });
 issueSchema.index({ createdAt: -1 });
+// Text index for full-text search on title + description
+issueSchema.index({ title: 'text', description: 'text' });
 
 module.exports = mongoose.model('Issue', issueSchema);
